@@ -18,7 +18,8 @@ export function createLibrary({ cases, assets, repository }) {
     'Content-Security-Policy': libraryHeaders['Content-Security-Policy'].replace(/frame-src 'self'/, ['frame-src', "'self'", ...origins].join(' '))
   });
   return request => {
-    const { pathname } = new URL(request.url);
+    const { pathname, searchParams } = new URL(request.url);
+    if (pathname === '/' && searchParams.has('view')) return null;
     const home = pathname === '/' || pathname === '/contribute' || caseByPath.has(pathname);
     const api = pathname === '/api/cases';
     const asset = Object.hasOwn(assets, pathname) ? assets[pathname] : null;
@@ -39,4 +40,10 @@ export function createLibrary({ cases, assets, repository }) {
     }
     return new Response(body('找不到这个看板。'), { status: 404, headers: typeHeaders('text/plain; charset=utf-8') });
   };
+}
+
+export function isLibraryRoute(request) {
+  const { pathname, searchParams } = new URL(request.url);
+  return (pathname === '/' && !searchParams.has('view')) || pathname === '/contribute' ||
+    pathname === '/api/cases' || /^\/(?:library|cases|case-assets)\//.test(pathname);
 }

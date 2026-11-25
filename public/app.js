@@ -45,7 +45,13 @@ async function loadLibrary() {
   document.title = selected.title + ' · FtShare 看板库';
   byId('case-title').textContent = selected.title;
   byId('case-description').textContent = selected.description;
-  byId('case-meta').textContent = [selected.author, ...selected.tags, selected.data].join(' · ');
+  const credit = selected.source ? element('a', selected.author) : element('span', selected.author);
+  if (selected.source) {
+    credit.href = selected.source;
+    credit.target = '_blank';
+    credit.rel = 'noopener noreferrer';
+  }
+  byId('case-meta').replaceChildren(credit, ' · ' + [...selected.tags, selected.data].join(' · '));
   const frame = document.createElement('iframe');
   frame.title = selected.title;
   frame.setAttribute('sandbox', selected.kind === 'external'
