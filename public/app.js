@@ -2,6 +2,22 @@ const byId = id => document.getElementById(id);
 const element = (tag, text) => Object.assign(document.createElement(tag), { textContent: text });
 const currentPath = location.pathname;
 const copyButton = byId('share');
+const loading = byId('case-loading');
+const viewer = byId('viewer');
+const currentCase = currentPath.match(/^\/cases\/([^/]+)$/)?.[1];
+if (currentCase) document.documentElement.dataset.case = currentCase;
+let toastTimer;
+function announce(message) {
+  const status = byId('status');
+  status.textContent = message;
+  status.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { status.hidden = true; }, 4000);
+}
+function parseUrl(value) {
+  if (typeof value !== 'string') return null;
+  try { return new URL(value); } catch { return null; }
+}
 
 async function loadLibrary() {
   const response = await fetch('/api/cases');
@@ -11,6 +27,7 @@ async function loadLibrary() {
   let selected = currentPath === '/' ? cases[0] : cases.find(item => item.url === currentPath);
   const query = byId('search');
   function list() {
+    query.hidden = cases.length < 6;
     const match = query.value.trim().normalize('NFKC').toLowerCase();
     const results = cases.filter(item =>
       [item.title, item.description, item.author, ...item.tags].some(term => term.normalize('NFKC').toLowerCase().includes(match)));
@@ -18,7 +35,8 @@ async function loadLibrary() {
       const link = element('a', '');
       link.href = item.url;
       if (item.id === selected?.id) link.setAttribute('aria-current', 'page');
-      link.append(element('strong', item.title), element('span', item.description));
+      link.textContent = item.title;
+      link.title = item.description;
       return link;
     }));
     byId('directory-empty').hidden = results.length > 0;
@@ -37,7 +55,7 @@ async function loadLibrary() {
           if (!item || typeof item.id !== 'string' || item.url !== '/cases/' + item.id ||
             !/^[a-z][a-z0-9-]{0,63}$/.test(item.id) || !Array.isArray(item.tags) ||
             ![item.title, item.description, item.author, item.data, ...item.tags].every(value => typeof value === 'string')) return false;
-          const entry = URL.parse(item.entry);
+          const entry = parseUrl(item.entry);
           if (entry?.protocol !== 'https:' || entry.username || entry.password) return false;
           if (item.kind === 'local') return entry.href === new URL('case-assets/' + item.id + '/index.html', endpoint).href;
           return item.kind === 'external';
@@ -59,33 +77,44 @@ async function loadLibrary() {
   }
 
   if (currentPath === '/contribute') {
-    byId('case-title').textContent = '贡献你的看板';
-    byId('case-description').textContent = '把你已经打磨好的金融研究变成一个别人可以直接打开的案例。';
+    document.title = '贡献看板 · FtShare 看板库';
+    byId('contribute').setAttribute('aria-current', 'page');
     const article = element('article', '');
+    article.append(element('h1', '贡献你的看板'));
     const list = element('ol', '');
-    for (const step of ['复制案例模板，在本地完成看板。', '给出数据来源、更新范围和可公开预览的数据。', '提交 Pull Request。通过检查和维护者预览后，就会出现在案例目录。']) {
+    for (const step of ['复制案例模板，在本地完成看板。', '注明数据来源、观察范围和公开分发权限。', '提交 Pull Request，审核通过后发布。']) {
       list.append(element('li', step));
     }
-    const guide = element('a', '打开 GitHub 贡献指南');
+    const guide = element('a', 'GitHub 贡献指南');
     guide.href = repository + '/blob/main/CONTRIBUTING.md';
-    const template = element('a', '查看案例模板');
+    const template = element('a', '案例模板');
     template.href = repository + '/tree/main/templates/case';
-    article.append(list, guide, element('p', ''), template);
-    byId('viewer').append(article);
+    const links = element('div', '');
+    links.className = 'contribution-links';
+    links.append(guide, template);
+    article.append(list, links);
+    viewer.classList.add('contribution');
+    viewer.append(article);
+    loading.hidden = true;
     return;
   }
   if (!selected) throw new Error('找不到这个看板。请从目录选择一个案例。');
   document.title = selected.title + ' · FtShare 看板库';
-  byId('case-title').textContent = selected.title;
-  byId('case-description').textContent = selected.description;
-  const credit = selected.source ? element('a', selected.author) : element('span', selected.author);
-  const sourceUrl = selected.source && URL.parse(selected.source);
-  if (sourceUrl?.protocol === 'https:') {
-    credit.href = sourceUrl.href;
-    credit.target = '_blank';
-    credit.rel = 'noopener noreferrer';
+  document.documentElement.dataset.case = selected.id;
+  if (selected.author !== 'FtShare') {
+    const credit = byId('case-credit');
+    const sourceUrl = parseUrl(selected.source);
+    if (sourceUrl?.protocol === 'https:') {
+      const author = element('a', selected.author);
+      author.href = sourceUrl.href;
+      author.target = '_blank';
+      author.rel = 'noopener noreferrer';
+      credit.append(author);
+    } else {
+      credit.textContent = selected.author;
+    }
+    credit.hidden = false;
   }
-  byId('case-meta').replaceChildren(credit, ' · ' + [...selected.tags, selected.data].join(' · '));
   const frame = document.createElement('iframe');
   frame.title = selected.title;
   frame.setAttribute('sandbox', selected.kind === 'external' && new URL(selected.entry, location.origin).origin !== location.origin
@@ -93,23 +122,22 @@ async function loadLibrary() {
     : 'allow-scripts allow-downloads');
   frame.referrerPolicy = 'no-referrer';
   frame.src = selected.entry;
-  byId('viewer').append(frame);
+  viewer.append(frame);
+  loading.hidden = true;
   const source = byId('source');
   source.href = selected.entry;
-  source.textContent = selected.kind === 'external' ? '打开原看板' : '在独立页打开';
-  source.hidden = false;
-  copyButton.hidden = false;
+  source.textContent = selected.kind === 'external' ? '打开原站' : '独立打开';
+  byId('case-actions').hidden = false;
   copyButton.onclick = async () => {
     try {
       await navigator.clipboard.writeText(new URL(selected.url, location.origin).href);
-      byId('status').textContent = '已复制看板链接。';
+      announce('已复制看板链接。');
     } catch {
-      byId('status').textContent = '看板链接：' + new URL(selected.url, location.origin).href;
+      announce(new URL(selected.url, location.origin).href);
     }
-    byId('status').hidden = false;
   };
 }
 
 loadLibrary().catch(error => {
-  byId('case-title').textContent = error.message;
+  loading.textContent = error.message;
 });
