@@ -14,8 +14,8 @@ export function readPublishedCatalog(payload) {
       if (item.entry !== '/case-assets/' + item.id + '/index.html' ||
           !Object.hasOwn(payload.assets, item.entry)) throw new Error('无效本地案例入口');
     } else if (item.kind === 'external') {
-      const entry = URL.parse(item.entry);
-      if (!entry || entry.protocol !== 'https:' || entry.username || entry.password || entry.port) throw new Error('无效站外案例入口');
+      const entry = new URL(item.entry);
+      if (entry.protocol !== 'https:' || entry.username || entry.password || entry.port) throw new Error('无效站外案例入口');
     } else throw new Error('无效案例类型');
   }
   const assetPath = /^\/case-assets\/([a-z0-9-]+)(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)+$/;
@@ -35,16 +35,16 @@ export function followPublishedCases(local, endpoint, { fetcher = fetch, now = D
       checkedUntil = now() + 60_000;
       try {
         const response = await fetcher(endpoint, {
-          redirect: 'error', signal: AbortSignal.timeout(2500), cf: { cacheEverything: true, cacheTtl: 60 }
+          redirect: 'error', signal: AbortSignal.timeout(7500)
         });
         if (!response.ok) throw new Error('发布目录不可用');
         const raw = await response.text();
         if (raw.length > 3_000_000) throw new Error('发布目录超过大小限制');
         const { cases, assets } = readPublishedCatalog(JSON.parse(raw));
         const shell = Object.fromEntries(Object.entries(local.assets).filter(([route]) => route.startsWith('/library/')));
-        handler = createLibrary({ cases, assets: { ...shell, ...assets }, repository: local.repository });
-      } catch {
-        // Keep the current working release when the public catalog cannot refresh.
+        handler = createLibrary({ cases, assets: { ...shell, ...assets }, repository: local.repository, origin: 'published' });
+      } catch (error) {
+        console.warn('Could not refresh the public case catalog:', error.message);
       }
     }
     return handler(request);

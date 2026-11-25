@@ -45,3 +45,24 @@ test('a new case needs only a directory and its assets run in a sandbox', async 
   await assert.rejects(loadLibrarySource(temp, repo), /检测到凭据/);
   assert.ok((await readFile(asset, 'utf8')).includes('observations'));
 });
+
+test('the hosted library follows a published catalog and retains it after an upstream failure', async () => {
+  const { followPublishedCases } = await import('../src/remote-library.js');
+  const seed = await loadLibrarySource(root, repo);
+  const local = { ...seed, cases: seed.cases.slice(0, 2) };
+  let time = 0;
+  const respond = followPublishedCases(local, 'https://example.com/catalog.json', {
+    now: () => time,
+    fetcher: async () => time > 0 ? new Response(null, { status: 503 }) : Response.json({
+      version: 1,
+      cases: seed.cases,
+      assets: Object.fromEntries(Object.entries(seed.assets).filter(([path]) => path.startsWith('/case-assets/')))
+    })
+  });
+  const result = await (await respond(request('/api/cases'))).json();
+  assert.equal(result.origin, 'published');
+  assert.ok(result.cases.some(item => item.id === 'index-futures-basis'));
+  assert.equal((await respond(request('/case-assets/index-futures-basis/index.html'))).status, 200);
+  time = 60_000;
+  assert.deepEqual(await (await respond(request('/api/cases'))).json(), result);
+});

@@ -11,7 +11,7 @@ const casePolicy = [
 ].join('; ');
 const typeHeaders = (type, extra) => ({ 'Content-Type': type, ...libraryHeaders, ...extra });
 
-export function createLibrary({ cases, assets, repository }) {
+export function createLibrary({ cases, assets, repository, origin = 'bundled' }) {
   const caseByPath = new Map(cases.map(item => [item.url, item]));
   const origins = [...new Set(cases.filter(item => item.kind === 'external').map(item => new URL(item.entry).origin))];
   const shellHeaders = typeHeaders('text/html; charset=utf-8', {
@@ -27,7 +27,7 @@ export function createLibrary({ cases, assets, repository }) {
     if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
     const body = value => request.method === 'HEAD' ? null : value;
     if (home) return new Response(body(assets['/library/index.html'].text), { headers: shellHeaders });
-    if (api) return new Response(body(JSON.stringify({ version: 1, repository, cases })), {
+    if (api) return new Response(body(JSON.stringify({ version: 1, repository, cases, origin })), {
       headers: typeHeaders('application/json; charset=utf-8', { 'Cache-Control': 'no-store' })
     });
     if (asset) {
