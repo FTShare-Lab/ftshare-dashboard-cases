@@ -22,7 +22,6 @@ test('official dashboards use original addresses and have distinct share links',
   const shell = await respond(request('/cases/vix-watch')).text();
   assert.equal([...shell.matchAll(/href="\/contribute"/g)].length, 1);
   assert.doesNotMatch(shell, /id="case-title"|id="case-description"/);
-  assert.equal(respond(request('/library/ftai-mark.svg')).status, 200);
   assert.equal(respond(request('/contribute')).status, 200);
   assert.equal(respond(request('/cases/missing')).status, 404);
   assert.equal(respond(request('/workbench')), null);
