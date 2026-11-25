@@ -17,7 +17,7 @@ async function loadLibrary() {
     byId('directory').replaceChildren(...results.map(item => {
       const link = element('a', '');
       link.href = item.url;
-      if (item === selected) link.setAttribute('aria-current', 'page');
+      if (item.id === selected?.id) link.setAttribute('aria-current', 'page');
       link.append(element('strong', item.title), element('span', item.description));
       return link;
     }));
@@ -43,18 +43,18 @@ async function loadLibrary() {
           return item.kind === 'external';
         });
         if (validated.length !== release.cases.length) return;
-        const available = new Map(bundled.map(item => [item.id, item]));
-        cases = validated.map(item => {
-          const previous = available.get(item.id);
-          return item.kind === 'local' && previous?.kind === 'local' ? { ...item, entry: previous.entry } : item;
-        });
-        if (!selected) selected = cases.find(item => item.url === currentPath);
+        cases = validated;
+        if (!selected || selected.kind === 'local') {
+          const matching = cases.find(item => item.url === currentPath);
+          if (matching) selected = matching;
+        }
+        byId('directory').dataset.source = 'published';
         list();
       } catch {
         // The bundled cases remain available when the public feed is unavailable.
       }
     };
-    if (selected) void refresh();
+    if (selected?.kind === 'external') void refresh();
     else if (currentPath !== '/contribute') await refresh();
   }
 
