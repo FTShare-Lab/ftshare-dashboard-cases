@@ -2,9 +2,54 @@
   "id": "etf-flow",
   "title": "ETF 资金观测台",
   "description": "看宽基 ETF 的成交、净申赎和区间累计，联看指数走势。",
-  "tags": ["ETF", "资金"],
+  "tags": [
+    "ETF",
+    "资金"
+  ],
   "author": "FtShare",
   "kind": "external",
   "entry": "https://etf.jtxaionline.com/",
-  "data": "来源与日期见原看板"
+  "data": "来源与日期见原看板",
+  "charts": [
+    {
+      "id": "radar",
+      "label": "ETF 异动雷达"
+    },
+    {
+      "id": "chart",
+      "label": "分钟成交与指数"
+    },
+    {
+      "id": "chartCum",
+      "label": "累计成交对比"
+    },
+    {
+      "id": "chartTypCase",
+      "label": "放量日分钟结构"
+    },
+    {
+      "id": "chartTypNorm",
+      "label": "常态日分钟结构"
+    },
+    {
+      "id": "chartAmt",
+      "label": "放量日成交额"
+    },
+    {
+      "id": "chartNf",
+      "label": "放量日净申购"
+    },
+    {
+      "id": "chartDAmt",
+      "label": "历史成交额"
+    },
+    {
+      "id": "chartDNf",
+      "label": "历史净申购"
+    },
+    {
+      "id": "chartBroad",
+      "label": "宽基净流入与累计"
+    }
+  ]
 }

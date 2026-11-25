@@ -12,7 +12,7 @@ const binary = new Set(['.png', '.jpeg', '.jpg', '.webp', '.woff2']);
 const byId = new Intl.Collator('en');
 const text = (value, max) => typeof value === 'string' && value.trim() !== '' && value.length <= max;
 const secret = /ftshare_sk_[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}/;
-const expected = ['id', 'title', 'description', 'tags', 'author', 'kind', 'entry', 'data', 'source'];
+const expected = ['id', 'title', 'description', 'tags', 'author', 'kind', 'entry', 'data', 'source', 'original', 'origin', 'charts'];
 const priority = ['etf-flow', 'vix-watch'];
 
 function validateManifest(item, id) {
@@ -25,12 +25,18 @@ function validateManifest(item, id) {
   if (item.kind === 'local' && item.entry !== 'index.html') {
     throw new Error(`cases/${id} 的本地入口须为 index.html`);
   }
-  for (const candidate of [item.kind === 'external' ? item.entry : undefined, item.source]) {
+  for (const candidate of [item.kind === 'external' ? item.entry : undefined, item.source, item.original, item.origin]) {
     if (candidate === undefined) continue;
     const url = URL.parse(candidate);
     if (!url || url.protocol !== 'https:' || url.username || url.password || url.port || candidate.length > 300) {
       throw new Error(`cases/${id} 只接受标准 HTTPS 链接`);
     }
+  }
+  if (item.origin && new URL(item.origin).origin !== item.origin) throw new Error(`cases/${id} 的数据源须为 HTTPS 站点地址`);
+  if (item.charts !== undefined && (!Array.isArray(item.charts) || item.charts.length > 24 ||
+      item.charts.some(chart => !/^[A-Za-z][\w-]{0,48}$/.test(chart?.id ?? '') || !text(chart.label, 40)) ||
+      new Set(item.charts.map(chart => chart.id)).size !== item.charts.length)) {
+    throw new Error(`cases/${id} 的图表导航有误`);
   }
   return item;
 }

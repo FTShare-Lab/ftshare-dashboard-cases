@@ -1,4 +1,4 @@
-import { createLibrary } from './library.js';
+import { createLibrary, curatedCases, retiredCases } from './library.js';
 
 const idPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
@@ -10,6 +10,10 @@ export function readPublishedCatalog(payload) {
     if (!item || typeof item.id !== 'string' || !idPattern.test(item.id) || ids.has(item.id) ||
         item.url !== '/cases/' + item.id || typeof item.entry !== 'string') throw new Error('无效案例入口');
     ids.add(item.id);
+    if (item.origin) {
+      const origin = new URL(item.origin);
+      if (origin.protocol !== 'https:' || origin.origin !== item.origin) throw new Error('无效数据来源');
+    }
     if (item.kind === 'local') {
       if (item.entry !== '/case-assets/' + item.id + '/index.html' ||
           !Object.hasOwn(payload.assets, item.entry)) throw new Error('无效本地案例入口');
@@ -41,8 +45,14 @@ export function followPublishedCases(local, endpoint, { fetcher = fetch, now = D
         const raw = await response.text();
         if (raw.length > 3_000_000) throw new Error('发布目录超过大小限制');
         const { cases, assets } = readPublishedCatalog(JSON.parse(raw));
-        const shell = Object.fromEntries(Object.entries(local.assets).filter(([route]) => route.startsWith('/library/')));
-        handler = createLibrary({ cases, assets: { ...shell, ...assets }, repository: local.repository, origin: 'published', feed: local.feed });
+        const reserved = new Set([...curatedCases, ...retiredCases]);
+        const community = cases.filter(item => !reserved.has(item.id));
+        const ids = new Set(community.map(item => item.id));
+        const released = Object.fromEntries(Object.entries(assets).filter(([route]) => ids.has(route.split('/')[2])));
+        handler = createLibrary({
+          ...local, cases: [...local.cases.filter(item => curatedCases.includes(item.id)), ...community],
+          assets: { ...local.assets, ...released }, origin: 'published'
+        });
       } catch (error) {
         console.warn('Could not refresh the public case catalog:', error.message);
       }

@@ -6,7 +6,10 @@ import { createLibrary } from './library.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const repository = 'https://github.com/FTShare-Lab/ftshare-dashboard-cases';
 const port = Number(process.env.PORT || 8770);
-const respond = createLibrary(await loadLibrarySource(root, repository));
+const respond = createLibrary({
+  ...await loadLibrarySource(root, repository),
+  creationUrl: 'https://ftshare-visualization.zippymarshmallow.chatgpt.site/workbench?preset=blank'
+});
 createServer(async (request, response) => {
   const method = request.method === 'GET' || request.method === 'HEAD' ? request.method : 'POST';
   const result = respond(new Request('http://localhost' + request.url, { method })) ?? new Response(null, { status: 404 });

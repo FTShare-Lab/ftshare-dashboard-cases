@@ -12,20 +12,30 @@
   <div class="layout">
     <aside class="rail" aria-label="看板库导航">
       <header class="rail-heading">
-        <a class="brand" href="/" aria-label="FtShare 看板库首页">看板库</a>
+        <button class="rail-toggle" id="rail-toggle" type="button" aria-expanded="true"
+                aria-controls="rail-directory rail-footer" aria-label="收起看板库">
+          <span class="panel-icon" aria-hidden="true"></span><span class="rail-label">看板库</span>
+        </button>
       </header>
-      <div class="rail-directory">
+      <div class="rail-directory" id="rail-directory">
         <input id="search" type="search" placeholder="搜索看板" aria-label="搜索看板" autocomplete="off" hidden>
         <nav id="directory" aria-label="看板"></nav>
         <p id="directory-empty" class="muted" role="status" hidden>没有匹配的看板。</p>
+        <details class="chart-navigation" id="chart-navigation" hidden>
+          <summary>图表导航</summary>
+          <ul id="chart-links"></ul>
+        </details>
       </div>
-      <footer class="rail-footer">
+      <footer class="rail-footer" id="rail-footer">
         <p class="credit" id="case-credit" hidden></p>
         <div class="case-actions" id="case-actions" hidden>
           <button id="share" type="button">复制链接</button>
           <a id="source" target="_blank" rel="noopener noreferrer">独立打开</a>
         </div>
-        <a class="contribute" id="contribute" href="/contribute">贡献看板</a>
+        <div class="library-actions">
+          <a class="create" id="create" href="/workbench?preset=blank">创建我的看板</a>
+          <a class="contribute" id="contribute" href="/contribute">贡献看板</a>
+        </div>
       </footer>
     </aside>
     <main class="case" aria-label="看板内容">

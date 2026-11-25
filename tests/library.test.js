@@ -16,14 +16,19 @@ test('official dashboards use original addresses and have distinct share links',
   const shop = await respond(request('/api/cases')).json();
   assert.deepEqual(shop.cases.slice(0, 2).map(item => [item.url, item.entry]), [
     ['/cases/etf-flow', 'https://etf.jtxaionline.com/'],
-    ['/cases/vix-watch', 'https://etf.jtxaionline.com/vix/']
+    ['/cases/vix-watch', '/case-assets/vix-watch/index.html']
   ]);
+  assert.equal(shop.cases[1].original, 'https://etf.jtxaionline.com/vix/');
+  assert.ok(shop.cases.every(item => item.charts.length >= 6));
+  assert.match(respond(request(shop.cases[1].entry)).headers.get('content-security-policy'), /connect-src 'self' https:\/\/etf\.jtxaionline\.com/);
   assert.match(respond(request('/cases/vix-watch')).headers.get('content-security-policy'), /frame-src 'self' https:\/\/etf\.jtxaionline\.com/);
   const shell = await respond(request('/cases/vix-watch')).text();
   assert.equal([...shell.matchAll(/href="\/contribute"/g)].length, 1);
   assert.doesNotMatch(shell, /id="case-title"|id="case-description"/);
   assert.equal(respond(request('/contribute')).status, 200);
   assert.equal(respond(request('/cases/missing')).status, 404);
+  assert.equal(respond(request('/cases/index-futures-basis')).status, 410);
+  assert.equal(respond(request('/case-assets/index-futures-basis/index.html')).status, 410);
   assert.equal(respond(request('/workbench')), null);
 });
 
@@ -58,14 +63,17 @@ test('the hosted library follows a published catalog and retains it after an ups
     now: () => time,
     fetcher: async () => time > 0 ? new Response(null, { status: 503 }) : Response.json({
       version: 1,
-      cases: seed.cases,
+      cases: [...seed.cases,
+        { id: 'old-demo', url: '/cases/old-demo', kind: 'external', entry: 'https://example.test/' },
+        { id: 'index-futures-basis', url: '/cases/index-futures-basis', kind: 'external', entry: 'https://example.test/' }],
       assets: Object.fromEntries(Object.entries(seed.assets).filter(([path]) => path.startsWith('/case-assets/')))
     })
   });
   const result = await (await respond(request('/api/cases'))).json();
   assert.equal(result.origin, 'published');
-  assert.ok(result.cases.some(item => item.id === 'index-futures-basis'));
-  assert.equal((await respond(request('/case-assets/index-futures-basis/index.html'))).status, 200);
+  assert.ok(result.cases.some(item => item.id === 'old-demo'));
+  assert.ok(!result.cases.some(item => item.id === 'index-futures-basis'));
+  assert.equal((await respond(request('/case-assets/index-futures-basis/index.html'))).status, 410);
   time = 60_000;
   assert.deepEqual(await (await respond(request('/api/cases'))).json(), result);
 });

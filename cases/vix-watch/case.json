@@ -2,9 +2,40 @@
   "id": "vix-watch",
   "title": "波动与资金观察台",
   "description": "联看六组指数的恐慌指数、对应 ETF 价格与净申赎。",
-  "tags": ["VIX", "宽基指数"],
+  "tags": [
+    "VIX",
+    "宽基指数"
+  ],
   "author": "FtShare",
-  "kind": "external",
-  "entry": "https://etf.jtxaionline.com/vix/",
-  "data": "来源与日期见原看板"
+  "kind": "local",
+  "entry": "index.html",
+  "data": "公开日频快照 · 来自原看板",
+  "charts": [
+    {
+      "id": "vix-csi300",
+      "label": "沪深 300"
+    },
+    {
+      "id": "vix-csi1000",
+      "label": "中证 1000"
+    },
+    {
+      "id": "vix-sse50",
+      "label": "上证 50"
+    },
+    {
+      "id": "vix-csi500",
+      "label": "中证 500"
+    },
+    {
+      "id": "vix-chinext",
+      "label": "创业板"
+    },
+    {
+      "id": "vix-star50",
+      "label": "科创 50"
+    }
+  ],
+  "origin": "https://etf.jtxaionline.com",
+  "original": "https://etf.jtxaionline.com/vix/"
 }
