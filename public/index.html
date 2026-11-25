@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="打开 FtShare 市场研究看板，或贡献你自己的开源看板。">
+  <title>FtShare 看板库</title>
+  <link rel="stylesheet" href="/library/style.css">
+  <script type="module" src="/library/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/" aria-label="FtShare 看板库首页"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>FtShare <b>看板库</b></span></a>
+    <a class="contribute" id="contribute" href="/contribute">贡献看板</a>
+  </header>
+  <main class="layout">
+    <aside aria-labelledby="directory-title">
+      <h1 id="directory-title">研究看板</h1>
+      <input id="search" type="search" placeholder="搜索看板" aria-label="搜索看板" autocomplete="off">
+      <nav id="directory" aria-label="看板"></nav>
+      <p id="directory-empty" role="status" hidden>没有匹配的看板。</p>
+      <div class="rail-footer"><a href="/contribute">贡献你的研究看板</a></div>
+    </aside>
+    <section class="case" aria-labelledby="case-title">
+      <header class="case-header">
+        <div><h2 id="case-title">正在打开看板</h2><p id="case-description"></p></div>
+        <div class="case-actions"><button id="share" type="button" hidden>复制链接</button><a id="source" target="_blank" rel="noopener noreferrer" hidden>在独立页打开</a></div>
+      </header>
+      <p id="case-meta" class="meta"></p>
+      <div class="viewer" id="viewer" aria-live="polite"></div>
+      <p id="status" class="meta" role="status" hidden></p>
+    </section>
+  </main>
+</body>
+</html>

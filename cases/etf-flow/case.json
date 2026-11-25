@@ -1,0 +1,10 @@
+{
+  "id": "etf-flow",
+  "title": "ETF 资金观测台",
+  "description": "看宽基 ETF 的成交、净申赎和区间累计，联看指数走势。",
+  "tags": ["ETF", "资金"],
+  "author": "FtShare",
+  "kind": "external",
+  "entry": "https://etf.jtxaionline.com/",
+  "data": "来源与日期见原看板"
+}

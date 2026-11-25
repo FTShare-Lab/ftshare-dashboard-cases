@@ -1,0 +1,10 @@
+{
+  "id": "vix-watch",
+  "title": "波动与资金观察台",
+  "description": "联看六组指数的恐慌指数、对应 ETF 价格与净申赎。",
+  "tags": ["VIX", "宽基指数"],
+  "author": "FtShare",
+  "kind": "external",
+  "entry": "https://etf.jtxaionline.com/vix/",
+  "data": "来源与日期见原看板"
+}

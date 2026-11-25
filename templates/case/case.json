@@ -1,0 +1,10 @@
+{
+  "id": "my-market-study",
+  "title": "填写看板名称",
+  "description": "用一句话说明这张看板能回答什么问题。",
+  "tags": ["市场"],
+  "author": "填写署名",
+  "kind": "local",
+  "entry": "index.html",
+  "data": "公开演示样例"
+}
