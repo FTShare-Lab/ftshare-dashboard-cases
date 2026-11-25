@@ -13,7 +13,9 @@ await writeFile(join(output, 'catalog.json'), JSON.stringify({ version: 1, cases
 
 const prefix = 'https://ftshare-lab.github.io/ftshare-dashboard-cases';
 const readable = cases.map(item => item.kind === 'local' ? { ...item, entry: prefix + item.entry } : item);
-for (const [route, asset] of Object.entries(publicAssets)) {
+const sharedAssets = Object.fromEntries(Object.entries(assets).filter(([route]) =>
+  /^\/library\/(?:echarts\.min\.js|(?:ECHARTS-LICENSE|ECHARTS-NOTICE|LICENSE-d3)\.txt)$/.test(route)));
+for (const [route, asset] of Object.entries({ ...publicAssets, ...sharedAssets })) {
   const file = join(output, route.slice(1));
   await mkdir(dirname(file), { recursive: true });
   await writeFile(file, asset.bytes ? Buffer.from(asset.bytes, 'base64') : asset.text);

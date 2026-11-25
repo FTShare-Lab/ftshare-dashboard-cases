@@ -57,7 +57,7 @@ export async function loadLibrarySource(root, repository) {
       ? { type: types[extension], bytes: data.toString('base64') }
       : { type: types[extension] + '; charset=utf-8', text: data.toString('utf8') };
   }
-  for (const file of ['index.html', 'style.css', 'app.js']) await addAsset(join(root, 'public', file), '/library/' + file);
+  for (const file of ['index.html', 'style.css', 'app.js', 'echarts.min.js', 'ECHARTS-LICENSE.txt', 'ECHARTS-NOTICE.txt', 'LICENSE-d3.txt']) await addAsset(join(root, 'public', file), '/library/' + file);
 
   async function include(directory, prefix) {
     if (!(await lstat(directory)).isDirectory()) throw new Error(`不是案例目录 ${directory}`);

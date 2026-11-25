@@ -8,7 +8,7 @@ const repository = 'https://github.com/FTShare-Lab/ftshare-dashboard-cases';
 const port = Number(process.env.PORT || 8770);
 const respond = createLibrary({
   ...await loadLibrarySource(root, repository),
-  creationUrl: 'https://ftshare-visualization.zippymarshmallow.chatgpt.site/workbench?preset=blank'
+  creationUrl: 'https://ftshare-visualization.zippymarshmallow.chatgpt.site/create'
 });
 createServer(async (request, response) => {
   const method = request.method === 'GET' || request.method === 'HEAD' ? request.method : 'POST';
