@@ -6,8 +6,9 @@ const copyButton = byId('share');
 async function loadLibrary() {
   const response = await fetch('/api/cases');
   if (!response.ok) throw new Error('暂时无法读取看板目录。');
-  const { cases, repository } = await response.json();
-  const selected = currentPath === '/' ? cases[0] : cases.find(item => item.url === currentPath);
+  const { cases: bundled, repository, origin, feed } = await response.json();
+  let cases = bundled;
+  let selected = currentPath === '/' ? cases[0] : cases.find(item => item.url === currentPath);
   const query = byId('search');
   function list() {
     const match = query.value.trim().normalize('NFKC').toLowerCase();
@@ -24,6 +25,38 @@ async function loadLibrary() {
   }
   query.addEventListener('input', list);
   list();
+  if (origin !== 'published' && feed) {
+    const refresh = async () => {
+      try {
+        const endpoint = new URL(feed);
+        const next = await fetch(endpoint, { credentials: 'omit', signal: AbortSignal.timeout(6000) });
+        if (!next.ok) return;
+        const release = await next.json();
+        if (release.version !== 1 || !Array.isArray(release.cases) || release.cases.length === 0) return;
+        const validated = release.cases.filter(item => {
+          if (!item || typeof item.id !== 'string' || item.url !== '/cases/' + item.id ||
+            !/^[a-z][a-z0-9-]{0,63}$/.test(item.id) || !Array.isArray(item.tags) ||
+            ![item.title, item.description, item.author, item.data, ...item.tags].every(value => typeof value === 'string')) return false;
+          const entry = URL.parse(item.entry);
+          if (entry?.protocol !== 'https:' || entry.username || entry.password) return false;
+          if (item.kind === 'local') return entry.href === new URL('case-assets/' + item.id + '/index.html', endpoint).href;
+          return item.kind === 'external';
+        });
+        if (validated.length !== release.cases.length) return;
+        const available = new Map(bundled.map(item => [item.id, item]));
+        cases = validated.map(item => {
+          const previous = available.get(item.id);
+          return item.kind === 'local' && previous?.kind === 'local' ? { ...item, entry: previous.entry } : item;
+        });
+        if (!selected) selected = cases.find(item => item.url === currentPath);
+        list();
+      } catch {
+        // The bundled cases remain available when the public feed is unavailable.
+      }
+    };
+    if (selected) void refresh();
+    else if (currentPath !== '/contribute') await refresh();
+  }
 
   if (currentPath === '/contribute') {
     byId('case-title').textContent = '贡献你的看板';
@@ -46,15 +79,16 @@ async function loadLibrary() {
   byId('case-title').textContent = selected.title;
   byId('case-description').textContent = selected.description;
   const credit = selected.source ? element('a', selected.author) : element('span', selected.author);
-  if (selected.source) {
-    credit.href = selected.source;
+  const sourceUrl = selected.source && URL.parse(selected.source);
+  if (sourceUrl?.protocol === 'https:') {
+    credit.href = sourceUrl.href;
     credit.target = '_blank';
     credit.rel = 'noopener noreferrer';
   }
   byId('case-meta').replaceChildren(credit, ' · ' + [...selected.tags, selected.data].join(' · '));
   const frame = document.createElement('iframe');
   frame.title = selected.title;
-  frame.setAttribute('sandbox', selected.kind === 'external'
+  frame.setAttribute('sandbox', selected.kind === 'external' && new URL(selected.entry, location.origin).origin !== location.origin
     ? 'allow-scripts allow-same-origin allow-downloads allow-popups allow-popups-to-escape-sandbox'
     : 'allow-scripts allow-downloads');
   frame.referrerPolicy = 'no-referrer';

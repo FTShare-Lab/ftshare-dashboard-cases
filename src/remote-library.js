@@ -42,7 +42,7 @@ export function followPublishedCases(local, endpoint, { fetcher = fetch, now = D
         if (raw.length > 3_000_000) throw new Error('发布目录超过大小限制');
         const { cases, assets } = readPublishedCatalog(JSON.parse(raw));
         const shell = Object.fromEntries(Object.entries(local.assets).filter(([route]) => route.startsWith('/library/')));
-        handler = createLibrary({ cases, assets: { ...shell, ...assets }, repository: local.repository, origin: 'published' });
+        handler = createLibrary({ cases, assets: { ...shell, ...assets }, repository: local.repository, origin: 'published', feed: local.feed });
       } catch (error) {
         console.warn('Could not refresh the public case catalog:', error.message);
       }

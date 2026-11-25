@@ -11,23 +11,25 @@ const casePolicy = [
 ].join('; ');
 const typeHeaders = (type, extra) => ({ 'Content-Type': type, ...libraryHeaders, ...extra });
 
-export function createLibrary({ cases, assets, repository, origin = 'bundled' }) {
+export function createLibrary({ cases, assets, repository, origin = 'bundled', feed }) {
   const caseByPath = new Map(cases.map(item => [item.url, item]));
   const origins = [...new Set(cases.filter(item => item.kind === 'external').map(item => new URL(item.entry).origin))];
+  const frameOrigins = feed ? ['https:'] : origins;
+  const connect = feed ? "; connect-src 'self' " + new URL(feed).origin : '';
   const shellHeaders = typeHeaders('text/html; charset=utf-8', {
-    'Content-Security-Policy': libraryHeaders['Content-Security-Policy'].replace(/frame-src 'self'/, ['frame-src', "'self'", ...origins].join(' '))
+    'Content-Security-Policy': libraryHeaders['Content-Security-Policy'].replace(/frame-src 'self'/, ['frame-src', "'self'", ...frameOrigins].join(' ')) + connect
   });
   return request => {
     const { pathname, searchParams } = new URL(request.url);
     if (pathname === '/' && searchParams.has('view')) return null;
-    const home = pathname === '/' || pathname === '/contribute' || caseByPath.has(pathname);
+    const home = pathname === '/' || pathname === '/contribute' || caseByPath.has(pathname) || (feed && /^\/cases\/[a-z][a-z0-9-]{0,63}$/.test(pathname));
     const api = pathname === '/api/cases';
     const asset = Object.hasOwn(assets, pathname) ? assets[pathname] : null;
     if (!(home || api || asset || pathname.startsWith('/cases/') || pathname.startsWith('/case-assets/'))) return null;
     if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
     const body = value => request.method === 'HEAD' ? null : value;
     if (home) return new Response(body(assets['/library/index.html'].text), { headers: shellHeaders });
-    if (api) return new Response(body(JSON.stringify({ version: 1, repository, cases, origin })), {
+    if (api) return new Response(body(JSON.stringify({ version: 1, repository, cases, origin, feed })), {
       headers: typeHeaders('application/json; charset=utf-8', { 'Cache-Control': 'no-store' })
     });
     if (asset) {
